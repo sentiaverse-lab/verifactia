@@ -6,7 +6,7 @@ const express = require('express');
 const cors = require('cors');
 const { ejecutarPipeline, ejecutarAmbasModalidades, actualizarRevision, ESTADOS } = require('./lib/pipeline');
 const scheduler = require('./lib/scheduler');
-const { estadoAlertas } = require('./lib/alerts');
+const { estadoAlertas, notificarAlertas } = require('./lib/alerts');
 const { estadoMemoria, obtenerEventos, recordarDecisionEditor, reiniciarMemoria } = require('./lib/memory');
 
 const app = express();
@@ -334,6 +334,18 @@ app.post('/api/scheduler/start', (req, res) => {
 app.post('/api/scheduler/stop', (req, res) => {
   const modo = req.body.modo === 'banca' ? 'banca' : 'tvn';
   res.json({ ok: true, scheduler: scheduler.detener(modo) });
+});
+
+// Prueba de alerta: envía un email de muestra al editor (para demo / verificar SMTP)
+app.post('/api/alerta/prueba', async (req, res) => {
+  const modo = req.body.modo === 'banca' ? 'banca' : 'tvn';
+  const r = cacheResultado[modo];
+  const ejemplo = r?.bandeja_priorizada?.[0];
+  const alerta = ejemplo
+    ? [{ id: ejemplo.id, titulo: ejemplo.titulo, puntaje: ejemplo.puntaje, nivel: ejemplo.nivel, medio: ejemplo.medio, fecha: ejemplo.fecha, componentes: ejemplo.componentes }]
+    : [{ id: 'demo', titulo: 'Noticia de prueba de alerta VerifactIA', puntaje: 80, nivel: 'alto', medio: 'VerifactIA', fecha: new Date().toISOString(), componentes: { R: 1, I: 0.8, U: 1, N: 0.7, E: 0.6 } }];
+  const resultado = await notificarAlertas(alerta, modo);
+  res.json({ ok: true, resultado, estado: estadoAlertas() });
 });
 
 app.get('/api/scheduler/status', (_req, res) => {
