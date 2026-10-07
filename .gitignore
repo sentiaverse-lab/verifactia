@@ -11,6 +11,10 @@ _e2e*.txt
 _test*.js
 _qa*.js
 
+# Herramientas internas de montaje del dossier Notion (usan credenciales en runtime) — NO versionar
+scripts/
+assets/
+
 # Grafo de conocimiento (regenerable)
 graphify-out/
 
