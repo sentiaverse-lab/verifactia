@@ -14,6 +14,8 @@ _qa*.js
 # Herramientas internas de montaje del dossier Notion (usan credenciales en runtime) — NO versionar
 scripts/
 assets/
+# Material interno del equipo (pitch, notas) — NO versionar
+_interno/
 
 # Grafo de conocimiento (regenerable)
 graphify-out/
