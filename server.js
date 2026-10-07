@@ -370,4 +370,19 @@ app.listen(PORT, () => {
   console.log(`VerifactIA corriendo en http://localhost:${PORT}`);
   const { IA_HABILITADA } = require('./lib/generator');
   console.log(`IA ${IA_HABILITADA ? 'HABILITADA' : 'modo baseline'}`);
+
+  // Auto-arranque: tras un reinicio/despertar (Render free hace spin-down), la caché
+  // en memoria se pierde. Ejecutamos el pipeline en background para que la bandeja
+  // nunca aparezca vacía en la demo. Usa caché de ingesta si existe (rápido).
+  if (String(process.env.AUTOSTART_PIPELINE || 'true').toLowerCase() === 'true') {
+    setTimeout(async () => {
+      try {
+        console.log('[autostart] Precargando datos (TVN + Banca)...');
+        const r = await ejecutarAmbasModalidades({ topN: 6 });
+        cacheResultado.tvn = r.tvn;
+        cacheResultado.banca = r.banca;
+        console.log('[autostart] Datos listos.');
+      } catch (e) { console.error('[autostart] error:', e.message); }
+    }, 3000);
+  }
 });
