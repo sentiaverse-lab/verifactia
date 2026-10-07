@@ -1,0 +1,27 @@
+node_modules/
+.env
+.env.local
+*.log
+.DS_Store
+dist/
+
+# Temporales de prueba / QA
+_e2e*.js
+_e2e*.txt
+_test*.js
+_qa*.js
+
+# Grafo de conocimiento (regenerable)
+graphify-out/
+
+# Datos generados en runtime (regenerables por el pipeline) — NO versionar
+data/raw/*
+data/processed/*
+data/fichas/*
+data/memoria/*
+data/revisiones.json
+# ...pero conservar la estructura de carpetas
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/fichas/.gitkeep
+!data/memoria/.gitkeep

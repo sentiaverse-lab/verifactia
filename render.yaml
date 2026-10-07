@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: verifactia
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: GDELT_ENABLED
+        value: "false"
+      - key: USGS_DIAS
+        value: "60"
+      # Las API keys se configuran en el panel de Render (NO en el repo):
+      # GROQ_API_KEY, CEREBRAS_API_KEY, AI_BASE_URL, AI_API_KEY, AI_MODEL
+      # y, si se usan alertas: ALERT_EMAIL_TO, SMTP_* , APP_PUBLIC_URL
