@@ -29,9 +29,98 @@ function aplicarTema(modo) {
 // ── Init ─────────────────────────────────────────────────────────
 async function init() {
   await checkHealth();
-  setModo('tvn'); // aplica tema + carga bandeja TVN
+  setModo('tvn'); // aplica tema + carga bandeja TVN (si ya hay datos frescos)
   cargarEventos();
   cargarEstadoSched();
+  // Auto-ejecución al abrir la web: si no hay datos (o están viejos), dispara el
+  // pipeline solo. Si ya están frescos, no hace nada (no re-ejecuta en cada visita).
+  autoEnsurePipeline();
+}
+
+// Fases que se muestran mientras corre el pipeline (feedback para que NO parezca congelado)
+const FASES_PIPELINE = [
+  { t: 0,  icon: '📥', msg: 'Ingiriendo noticias de fuentes públicas…' },
+  { t: 6,  icon: '🏷️', msg: 'Clasificando por tema, región y tipo…' },
+  { t: 12, icon: '📊', msg: 'Calculando el Índice RUINE (prioridad)…' },
+  { t: 20, icon: '✍️', msg: 'Generando fichas de evidencia y borradores…' },
+  { t: 30, icon: '🧩', msg: 'Casi listo: ordenando la bandeja priorizada…' },
+];
+
+function faseParaSegundos(seg) {
+  let f = FASES_PIPELINE[0];
+  for (const x of FASES_PIPELINE) { if (seg >= x.t) f = x; }
+  return f;
+}
+
+function pintarProgreso(seg) {
+  const f = faseParaSegundos(seg);
+  // progreso estimado (asintótico, nunca llega a 100 hasta que termina de verdad)
+  const pct = Math.min(95, Math.round((seg / 35) * 100));
+  const statusEl = document.querySelector('#pipelineStatus');
+  if (statusEl) {
+    statusEl.innerHTML =
+      `<div class="flex items-center gap-2 mb-1"><span class="pulsing">${f.icon}</span>` +
+      `<span>${f.msg}</span><span class="text-slate-500 ml-auto tabular-nums">${seg}s</span></div>` +
+      `<div class="h-1.5 rounded-full bg-white/10 overflow-hidden"><div class="h-full accent-bg transition-all duration-500" style="width:${pct}%"></div></div>`;
+  }
+  const bandejaEl = document.querySelector('#bandeja');
+  if (bandejaEl && !bandejaEl.dataset.skelPintado) {
+    const skel = Array.from({ length: 5 }).map(() => `
+      <div class="glass rounded-xl p-4">
+        <div class="flex items-start gap-3">
+          <div class="skeleton w-9 h-9 rounded-lg shrink-0"></div>
+          <div class="flex-1 space-y-2">
+            <div class="skeleton h-3 rounded w-11/12"></div>
+            <div class="skeleton h-3 rounded w-2/3"></div>
+            <div class="skeleton h-2 rounded w-1/3 mt-1"></div>
+          </div>
+        </div>
+      </div>`).join('');
+    bandejaEl.innerHTML =
+      `<div class="text-xs accent mb-2 px-1 pulsing">🤖 Primera carga — el motor está preparando la bandeja. Esto toma unos segundos…</div>` + skel;
+    bandejaEl.dataset.skelPintado = '1';
+  }
+}
+
+// Polling con feedback visual (cronómetro + fases + barra). Se usa en la auto-carga.
+async function pollingConProgreso() {
+  const inicio = Date.now();
+  for (let i = 0; i < 90; i++) {
+    const seg = Math.round((Date.now() - inicio) / 1000);
+    pintarProgreso(seg);
+    await new Promise(r => setTimeout(r, 1000));
+    // consultar estado cada ~4s para no saturar
+    if (i % 4 === 0) {
+      try {
+        const s = await fetch(`${BASE}/api/pipeline/status`).then(x => x.json());
+        const listo = !s.tvn.corriendo && !s.banca.corriendo && s.tvn.tieneResultado && s.banca.tieneResultado;
+        if (listo) {
+          const bandejaEl = document.querySelector('#bandeja');
+          if (bandejaEl) delete bandejaEl.dataset.skelPintado;
+          const statusEl = document.querySelector('#pipelineStatus');
+          if (statusEl) statusEl.innerHTML = `✅ Bandeja lista (${seg}s)`;
+          await cargarBandeja();
+          cargarEventos();
+          return;
+        }
+      } catch (_) {}
+    }
+  }
+  // timeout de seguridad: intentar cargar lo que haya
+  const bandejaEl = document.querySelector('#bandeja');
+  if (bandejaEl) delete bandejaEl.dataset.skelPintado;
+  await cargarBandeja();
+}
+
+async function autoEnsurePipeline() {
+  try {
+    const r = await fetch(`${BASE}/api/pipeline/ensure?maxAgeMin=30&topN=6`).then(x => x.json());
+    if (r && r.corriendo) {
+      // El servidor arrancó el pipeline en background: feedback vivo + esperar.
+      await pollingConProgreso();
+    }
+    // si r.listo === true, los datos ya estaban cargados: setModo ya pintó la bandeja.
+  } catch (_) { /* silencioso: no romper la carga si el endpoint no responde */ }
 }
 
 async function checkHealth() {

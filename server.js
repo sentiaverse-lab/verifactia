@@ -20,11 +20,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Cache del último resultado para el frontend
 let cacheResultado = { tvn: null, banca: null };
 let corriendo = { tvn: false, banca: false };
+let cacheTS = 0; // epoch ms de la última precarga de datos (para frescura)
 
 // El scheduler ejecuta el pipeline y refresca la caché del frontend
 scheduler.configurarEjecutor(async (opts) => {
   const r = await ejecutarPipeline(opts);
   cacheResultado[opts.modo] = r;
+  cacheTS = Date.now();
   return r;
 });
 
@@ -58,8 +60,42 @@ app.post('/api/pipeline/run-all', async (req, res) => {
     const r = await ejecutarAmbasModalidades({ topN });
     cacheResultado.tvn = r.tvn;
     cacheResultado.banca = r.banca;
+    cacheTS = Date.now();
   } catch (e) { console.error('[server] run-all error:', e.message); }
   finally { corriendo.tvn = false; corriendo.banca = false; }
+});
+
+// ── Auto-ejecución al abrir la web ───────────────────────────────
+// El frontend llama a esto al cargar. Dispara el pipeline SOLO si no hay datos
+// o si están "viejos" (más de maxAgeMin minutos). Si están frescos, no hace nada,
+// así un F5 o varias visitas seguidas no re-ejecutan el pipeline cada vez.
+app.get('/api/pipeline/ensure', (req, res) => {
+  const maxAgeMin = Math.max(1, Math.min(parseInt(req.query.maxAgeMin) || 30, 1440));
+  const topN = Math.min(parseInt(req.query.topN) || 6, 20);
+  const hayDatos = !!(cacheResultado.tvn && cacheResultado.banca);
+  const edadMin = cacheTS ? (Date.now() - cacheTS) / 60000 : Infinity;
+  const fresco = hayDatos && edadMin <= maxAgeMin;
+
+  if (fresco) {
+    return res.json({ ok: true, listo: true, corriendo: false, edadMin: Math.round(edadMin), motivo: 'cache_fresco' });
+  }
+  if (corriendo.tvn || corriendo.banca) {
+    return res.json({ ok: true, listo: false, corriendo: true, motivo: 'ya_corriendo' });
+  }
+  // Lanzar en background (no bloquea la respuesta)
+  corriendo.tvn = true; corriendo.banca = true;
+  res.json({ ok: true, listo: false, corriendo: true, motivo: hayDatos ? 'datos_viejos' : 'sin_datos' });
+  (async () => {
+    try {
+      console.log(`[ensure] auto-ejecutando pipeline (motivo=${hayDatos ? 'viejos' : 'vacio'}, topN=${topN})...`);
+      const r = await ejecutarAmbasModalidades({ topN });
+      cacheResultado.tvn = r.tvn;
+      cacheResultado.banca = r.banca;
+      cacheTS = Date.now();
+      console.log('[ensure] datos listos.');
+    } catch (e) { console.error('[ensure] error:', e.message); }
+    finally { corriendo.tvn = false; corriendo.banca = false; }
+  })();
 });
 
 // ── Estado del pipeline ──────────────────────────────────────────
@@ -381,6 +417,7 @@ app.listen(PORT, () => {
         const r = await ejecutarAmbasModalidades({ topN: 6 });
         cacheResultado.tvn = r.tvn;
         cacheResultado.banca = r.banca;
+        cacheTS = Date.now();
         console.log('[autostart] Datos listos.');
       } catch (e) { console.error('[autostart] error:', e.message); }
     }, 3000);
