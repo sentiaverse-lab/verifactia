@@ -119,7 +119,10 @@
   <header class="sticky top-0 z-30 border-b border-white/10 bg-black/40 backdrop-blur-xl px-5 py-3">
     <div class="max-w-[1600px] mx-auto flex items-center justify-between gap-4 flex-wrap">
       <div class="flex items-center gap-3 min-w-0">
-        <div class="w-11 h-11 accent-bg rounded-xl flex items-center justify-center font-black text-white text-xl logo-glow shrink-0">V</div>
+        <button onclick="abrirConfig()" title="Configuración de VerifactIA" class="group relative w-11 h-11 accent-bg rounded-xl flex items-center justify-center font-black text-white text-xl logo-glow shrink-0 cursor-pointer hover:scale-105 transition" aria-label="Abrir configuración">
+          <span class="group-hover:opacity-0 transition-opacity">V</span>
+          <span class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-lg">⚙️</span>
+        </button>
         <div class="min-w-0">
           <h1 class="text-xl font-black tracking-tight leading-none">Verifact<span class="accent">IA</span></h1>
           <p class="text-[11px] text-slate-400 leading-tight mt-0.5 wrap-safe">Copiloto de Inteligencia Informativa · hackIAthon Panamá 2026</p>
@@ -288,6 +291,252 @@
       </div>
     </footer>
   </main>
+
+  <!-- ══════════ PANEL DE CONFIGURACIÓN (mock) ══════════ -->
+  <div id="configOverlay" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="cerrarConfig()"></div>
+    <aside id="configDrawer" class="absolute top-0 right-0 h-full w-full max-w-md bg-[#0d0d1a] border-l border-white/10 shadow-2xl overflow-y-auto translate-x-full transition-transform duration-300">
+      <div class="sticky top-0 bg-[#0d0d1a]/95 backdrop-blur-xl border-b border-white/10 px-5 py-4 flex items-center justify-between z-10">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">⚙️</span>
+          <div>
+            <h2 class="font-black text-lg leading-none">Configuración</h2>
+            <p class="text-[11px] text-slate-500 mt-0.5">VerifactIA · ajustes del operador</p>
+          </div>
+        </div>
+        <button onclick="cerrarConfig()" class="w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="p-5 space-y-6 text-sm">
+        <div class="glass rounded-lg px-3 py-2 text-[11px] text-amber-300/90 border border-amber-500/20">
+          🧪 Vista previa (mock): los cambios se guardan localmente para demostrar la experiencia. La integración con el backend llega en la siguiente iteración.
+        </div>
+
+        <!-- Idioma / Multilingüe -->
+        <section>
+          <h3 class="font-bold accent mb-3 flex items-center gap-2">🌎 Idioma · Language</h3>
+          <div class="space-y-3">
+            <label class="block">
+              <span class="text-slate-400 text-xs">Idioma de la interfaz</span>
+              <select id="cfgIdioma" class="mt-1 w-full bg-slate-900/70 border border-white/10 rounded-lg px-3 py-2 text-slate-200 focus:border-[var(--accent)] outline-none">
+                <option value="es">🇵🇦 Español (Panamá)</option>
+                <option value="en">🇺🇸 English</option>
+                <option value="pt">🇧🇷 Português</option>
+                <option value="fr">🇫🇷 Français</option>
+              </select>
+            </label>
+            <div class="flex gap-1.5">
+              <button type="button" onclick="setIdiomaMock('es')" data-lang-btn="es" class="lang-chip flex-1 text-xs py-1.5 rounded-lg border border-white/10 bg-slate-900/60 hover:border-[var(--accent)] transition">ES</button>
+              <button type="button" onclick="setIdiomaMock('en')" data-lang-btn="en" class="lang-chip flex-1 text-xs py-1.5 rounded-lg border border-white/10 bg-slate-900/60 hover:border-[var(--accent)] transition">EN</button>
+              <button type="button" onclick="setIdiomaMock('pt')" data-lang-btn="pt" class="lang-chip flex-1 text-xs py-1.5 rounded-lg border border-white/10 bg-slate-900/60 hover:border-[var(--accent)] transition">PT</button>
+            </div>
+            <p class="text-[11px] text-slate-500">Arquitectura preparada para múltiples idiomas. English, Português y Français llegan en la siguiente iteración.</p>
+          </div>
+        </section>
+
+        <!-- Notificaciones -->
+        <section>
+          <h3 class="font-bold accent mb-3 flex items-center gap-2">🔔 Notificaciones</h3>
+          <div class="space-y-3">
+            <label class="block">
+              <span class="text-slate-400 text-xs">Correo para alertas</span>
+              <input id="cfgEmail" type="email" placeholder="editor@tvn-2.com" class="mt-1 w-full bg-slate-900/70 border border-white/10 rounded-lg px-3 py-2 text-slate-200 focus:border-[var(--accent)] outline-none">
+            </label>
+            <label class="flex items-center justify-between gap-2 py-1">
+              <span class="text-slate-300">Enviar alertas por email</span>
+              <input id="cfgEmailOn" type="checkbox" checked class="w-5 h-5 accent-[var(--accent)]">
+            </label>
+            <label class="flex items-center justify-between gap-2 py-1">
+              <span class="text-slate-300">Notificar también por WhatsApp</span>
+              <input id="cfgWhatsOn" type="checkbox" class="w-5 h-5 accent-[var(--accent)]">
+            </label>
+            <label class="block">
+              <span class="text-slate-400 text-xs">Umbral RUINE para alertar (0–100)</span>
+              <input id="cfgUmbral" type="range" min="0" max="100" value="70" oninput="document.getElementById('cfgUmbralVal').textContent=this.value" class="mt-2 w-full accent-[var(--accent)]">
+              <div class="text-right text-xs accent font-bold"><span id="cfgUmbralVal">70</span> / 100</div>
+            </label>
+          </div>
+        </section>
+
+        <!-- Almacenamiento -->
+        <section>
+          <h3 class="font-bold accent mb-3 flex items-center gap-2">💾 Reportes y logs</h3>
+          <div class="space-y-3">
+            <label class="block">
+              <span class="text-slate-400 text-xs">Dónde guardar los reportes</span>
+              <select id="cfgDestino" class="mt-1 w-full bg-slate-900/70 border border-white/10 rounded-lg px-3 py-2 text-slate-200 focus:border-[var(--accent)] outline-none">
+                <option value="local">Disco local del servidor</option>
+                <option value="r2">Cloudflare R2</option>
+                <option value="s3">Amazon S3</option>
+                <option value="gdrive">Google Drive</option>
+              </select>
+            </label>
+            <label class="block">
+              <span class="text-slate-400 text-xs">Formato de exportación</span>
+              <select id="cfgFormato" class="mt-1 w-full bg-slate-900/70 border border-white/10 rounded-lg px-3 py-2 text-slate-200 focus:border-[var(--accent)] outline-none">
+                <option value="json">JSON</option>
+                <option value="csv">CSV</option>
+                <option value="pdf">PDF</option>
+                <option value="txt">Texto plano</option>
+              </select>
+            </label>
+            <label class="block">
+              <span class="text-slate-400 text-xs">Retención de logs (días)</span>
+              <input id="cfgRetencion" type="number" min="1" max="365" value="30" class="mt-1 w-full bg-slate-900/70 border border-white/10 rounded-lg px-3 py-2 text-slate-200 focus:border-[var(--accent)] outline-none">
+            </label>
+          </div>
+        </section>
+
+        <!-- Pipeline -->
+        <section>
+          <h3 class="font-bold accent mb-3 flex items-center gap-2">⚡ Pipeline</h3>
+          <div class="space-y-3">
+            <label class="block">
+              <span class="text-slate-400 text-xs">Noticias a procesar a fondo (topN)</span>
+              <input id="cfgTopN" type="number" min="1" max="20" value="6" class="mt-1 w-full bg-slate-900/70 border border-white/10 rounded-lg px-3 py-2 text-slate-200 focus:border-[var(--accent)] outline-none">
+            </label>
+            <label class="block">
+              <span class="text-slate-400 text-xs">Frecuencia de actualización automática</span>
+              <select id="cfgFrecuencia" class="mt-1 w-full bg-slate-900/70 border border-white/10 rounded-lg px-3 py-2 text-slate-200 focus:border-[var(--accent)] outline-none">
+                <option value="off">Manual (solo al abrir)</option>
+                <option value="15">Cada 15 minutos</option>
+                <option value="30">Cada 30 minutos</option>
+                <option value="60" selected>Cada hora</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <!-- Fuentes -->
+        <section>
+          <h3 class="font-bold accent mb-3 flex items-center gap-2">🌐 Fuentes de datos</h3>
+          <div class="space-y-2">
+            <label class="flex items-center justify-between gap-2 py-1"><span class="text-slate-300">📰 TVN RSS</span><input data-fuente="tvn" type="checkbox" checked class="w-5 h-5 accent-[var(--accent)]"></label>
+            <label class="flex items-center justify-between gap-2 py-1"><span class="text-slate-300">🗞️ GDELT</span><input data-fuente="gdelt" type="checkbox" class="w-5 h-5 accent-[var(--accent)]"></label>
+            <label class="flex items-center justify-between gap-2 py-1"><span class="text-slate-300">🏦 Banco Mundial</span><input data-fuente="wb" type="checkbox" checked class="w-5 h-5 accent-[var(--accent)]"></label>
+            <label class="flex items-center justify-between gap-2 py-1"><span class="text-slate-300">🌋 USGS Sismos</span><input data-fuente="usgs" type="checkbox" checked class="w-5 h-5 accent-[var(--accent)]"></label>
+          </div>
+        </section>
+
+        <div class="flex gap-2 pt-2 pb-6">
+          <button onclick="guardarConfig()" class="flex-1 accent-bg text-white font-bold py-2.5 rounded-lg hover:brightness-110 transition">Guardar</button>
+          <button onclick="resetConfig()" class="px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white transition">Restablecer</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- toast de confirmación -->
+  <div id="cfgToast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] hidden px-5 py-3 rounded-xl bg-green-900/90 border border-green-400/30 text-green-200 text-sm font-medium shadow-2xl backdrop-blur">✓ Configuración guardada</div>
+
+  <script>
+    // ══════════ Config (mock, persiste en localStorage) ══════════
+    const CFG_KEY = 'verifactia_config_v1';
+    const CFG_DEFAULTS = { idioma:'es', email:'', emailOn:true, whatsOn:false, umbral:70, destino:'local', formato:'json', retencion:30, topN:6, frecuencia:'60', fuentes:{tvn:true,gdelt:false,wb:true,usgs:true} };
+
+    function abrirConfig() {
+      cargarConfigEnUI();
+      const o = document.getElementById('configOverlay');
+      const d = document.getElementById('configDrawer');
+      o.classList.remove('hidden');
+      requestAnimationFrame(() => d.classList.remove('translate-x-full'));
+    }
+    function cerrarConfig() {
+      const o = document.getElementById('configOverlay');
+      const d = document.getElementById('configDrawer');
+      d.classList.add('translate-x-full');
+      setTimeout(() => o.classList.add('hidden'), 300);
+    }
+    function leerConfig() {
+      try { return { ...CFG_DEFAULTS, ...JSON.parse(localStorage.getItem(CFG_KEY) || '{}') }; }
+      catch (_) { return { ...CFG_DEFAULTS }; }
+    }
+
+    // ── Mock multilingüe: ES es real; los demás muestran "coming soon" (configurable, en el roadmap) ──
+    const I18N_COMING = {
+      en: '🌐 English — coming soon. Multilingual support is on the roadmap.',
+      pt: '🌐 Português — em breve. O suporte multilíngue está no roadmap.',
+      fr: '🌐 Français — bientôt disponible. Le support multilingue est prévu.',
+    };
+    function setIdiomaMock(lang) {
+      const sel = document.getElementById('cfgIdioma'); if (sel) sel.value = lang;
+      document.querySelectorAll('[data-lang-btn]').forEach(el => {
+        el.classList.toggle('accent-bg', el.dataset.langBtn === lang);
+        el.classList.toggle('text-white', el.dataset.langBtn === lang);
+      });
+      if (lang === 'es') {
+        // Español: idioma real de la interfaz
+        document.documentElement.lang = 'es';
+        return;
+      }
+      // Otros idiomas: aviso "próximamente" (deja la UI en español)
+      mostrarComingSoon(I18N_COMING[lang] || I18N_COMING.en);
+    }
+    function mostrarComingSoon(msg) {
+      let el = document.getElementById('langComingToast');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'langComingToast';
+        el.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] px-5 py-3 rounded-xl bg-indigo-900/90 border border-indigo-400/30 text-indigo-100 text-sm font-medium shadow-2xl backdrop-blur';
+        document.body.appendChild(el);
+      }
+      el.textContent = msg;
+      el.style.display = 'block';
+      clearTimeout(el._t);
+      el._t = setTimeout(() => { el.style.display = 'none'; }, 2800);
+    }
+    function cargarConfigEnUI() {
+      const c = leerConfig();
+      document.getElementById('cfgIdioma').value = c.idioma;
+      document.querySelectorAll('[data-lang-btn]').forEach(el => {
+        el.classList.toggle('accent-bg', el.dataset.langBtn === c.idioma);
+        el.classList.toggle('text-white', el.dataset.langBtn === c.idioma);
+      });
+      document.getElementById('cfgEmail').value = c.email;
+      document.getElementById('cfgEmailOn').checked = c.emailOn;
+      document.getElementById('cfgWhatsOn').checked = c.whatsOn;
+      document.getElementById('cfgUmbral').value = c.umbral;
+      document.getElementById('cfgUmbralVal').textContent = c.umbral;
+      document.getElementById('cfgDestino').value = c.destino;
+      document.getElementById('cfgFormato').value = c.formato;
+      document.getElementById('cfgRetencion').value = c.retencion;
+      document.getElementById('cfgTopN').value = c.topN;
+      document.getElementById('cfgFrecuencia').value = c.frecuencia;
+      document.querySelectorAll('[data-fuente]').forEach(el => { el.checked = !!c.fuentes[el.dataset.fuente]; });
+    }
+    function guardarConfig() {
+      const fuentes = {}; document.querySelectorAll('[data-fuente]').forEach(el => fuentes[el.dataset.fuente] = el.checked);
+      const c = {
+        idioma: document.getElementById('cfgIdioma').value,
+        email: document.getElementById('cfgEmail').value.trim(),
+        emailOn: document.getElementById('cfgEmailOn').checked,
+        whatsOn: document.getElementById('cfgWhatsOn').checked,
+        umbral: +document.getElementById('cfgUmbral').value,
+        destino: document.getElementById('cfgDestino').value,
+        formato: document.getElementById('cfgFormato').value,
+        retencion: +document.getElementById('cfgRetencion').value,
+        topN: +document.getElementById('cfgTopN').value,
+        frecuencia: document.getElementById('cfgFrecuencia').value,
+        fuentes,
+      };
+      localStorage.setItem(CFG_KEY, JSON.stringify(c));
+      setIdiomaMock(c.idioma); // aplicar idioma elegido
+      const t = document.getElementById('cfgToast');
+      t.classList.remove('hidden');
+      setTimeout(() => t.classList.add('hidden'), 2200);
+      cerrarConfig();
+    }
+    function resetConfig() {
+      localStorage.removeItem(CFG_KEY);
+      cargarConfigEnUI();
+    }
+    // cerrar con Escape
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarConfig(); });
+    // el dropdown de idioma dispara la vista previa al cambiar
+    document.getElementById('cfgIdioma').addEventListener('change', e => setIdiomaMock(e.target.value));
+    // Nota: la UI real es ES. Los otros idiomas muestran "coming soon" solo cuando
+    // el usuario los elige en el panel; no se aplican al cargar la página.
+  </script>
 
   <script src="/app.js"></script>
 </body>
