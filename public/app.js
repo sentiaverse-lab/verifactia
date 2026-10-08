@@ -59,8 +59,8 @@ function pintarProgreso(seg) {
   const statusEl = document.querySelector('#pipelineStatus');
   if (statusEl) {
     statusEl.innerHTML =
-      `<div class="flex items-center gap-2 mb-1"><span class="pulsing">${f.icon}</span>` +
-      `<span>${f.msg}</span><span class="text-slate-500 ml-auto tabular-nums">${seg}s</span></div>` +
+      `<div class="flex items-center gap-2 mb-1 pulsing"><span>${f.icon}</span>` +
+      `<span class="font-medium">${f.msg}</span><span class="text-slate-500 ml-auto tabular-nums">${seg}s</span></div>` +
       `<div class="h-1.5 rounded-full bg-white/10 overflow-hidden"><div class="h-full accent-bg transition-all duration-500" style="width:${pct}%"></div></div>`;
   }
   const bandejaEl = document.querySelector('#bandeja');
@@ -77,7 +77,7 @@ function pintarProgreso(seg) {
         </div>
       </div>`).join('');
     bandejaEl.innerHTML =
-      `<div class="text-xs accent mb-2 px-1 pulsing">🤖 Primera carga — el motor está preparando la bandeja. Esto toma unos segundos…</div>` + skel;
+      `<div class="text-xs accent mb-2 px-1 pulsing">🤖 Preparando bandeja — TVN y Banca se actualizan juntos con la misma ingesta…</div>` + skel;
     bandejaEl.dataset.skelPintado = '1';
   }
 }
@@ -118,8 +118,12 @@ async function autoEnsurePipeline() {
     if (r && r.corriendo) {
       // El servidor arrancó el pipeline en background: feedback vivo + esperar.
       await pollingConProgreso();
+    } else if (r && r.listo) {
+      // Datos ya listos en el servidor (del autostart o caché reciente):
+      // setModo corrió antes de que hubiera datos → forzar recarga ahora.
+      await cargarBandeja();
+      cargarEventos();
     }
-    // si r.listo === true, los datos ya estaban cargados: setModo ya pintó la bandeja.
   } catch (_) { /* silencioso: no romper la carga si el endpoint no responde */ }
 }
 
@@ -205,7 +209,21 @@ async function polling() {
 async function cargarBandeja() {
   try {
     const r = await fetch(`${BASE}/api/bandeja?modo=${MODO}`).then(x => x.json());
-    if (!r.ok) { document.querySelector('#bandeja').innerHTML = `<div class="glass rounded-2xl p-6 text-center text-slate-500 text-sm">${r.msg}</div>`; return; }
+    if (!r.ok) {
+      // Sin datos: verificar si el pipeline está corriendo (ambas modalidades usan
+      // la misma ingesta — si corre para una, ya viene la otra también).
+      const s = await fetch(`${BASE}/api/pipeline/status`).then(x => x.json()).catch(() => null);
+      if (s && (s.tvn.corriendo || s.banca.corriendo)) {
+        // Ya hay un pipeline en marcha → mostrar progreso en vez de error
+        const bandejaEl = document.querySelector('#bandeja');
+        if (bandejaEl) delete bandejaEl.dataset.skelPintado;
+        await pollingConProgreso();
+      } else {
+        document.querySelector('#bandeja').innerHTML =
+          `<div class="glass rounded-2xl p-6 text-center text-slate-500 text-sm">${r.msg}</div>`;
+      }
+      return;
+    }
     datosBandeja = r;
     renderBandeja(r.bandeja);
     renderStats(r);
