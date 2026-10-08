@@ -496,11 +496,16 @@ function renderStats(r) {
   if (!cont || !panel) return;
   panel.classList.remove('hidden');
 
+  const fichasListas = r.fichas_generadas ?? 0;
+  const fichasTxt = (fichasListas && r.total && fichasListas < r.total)
+    ? `${fichasListas} de ${r.total}` : `${fichasListas || r.total}`;
   const base = `
     <div class="flex justify-between"><span class="text-slate-400">${MODO === 'banca' ? 'Noticias económicas' : 'Noticias priorizadas'}</span><span class="font-bold text-white">${r.total}</span></div>
+    <div class="flex justify-between"><span class="text-slate-400">Fichas listas</span><span class="font-bold text-white">${fichasTxt}</span></div>
     <div class="flex justify-between"><span class="text-slate-400">Grupos duplicados</span><span class="font-bold text-amber-400">${r.grupos_con_duplicados}</span></div>
     <div class="flex justify-between"><span class="text-slate-400">IA</span><span class="font-bold ${r.ia ? 'text-green-400' : 'text-yellow-400'}">${r.ia ? 'Habilitada' : 'Baseline'}</span></div>
-    <div class="flex justify-between"><span class="text-slate-400">Duración</span><span class="font-bold text-white">${r.duracion_seg}s</span></div>`;
+    <div class="flex justify-between"><span class="text-slate-400">Duración</span><span class="font-bold text-white">${r.duracion_seg}s</span></div>
+    ${(fichasListas && r.total && fichasListas < r.total) ? `<div class="text-[10px] text-slate-500 mt-1 wrap-safe">Las demás noticias generan su ficha al hacer clic en la bandeja.</div>` : ''}`;
 
   // Snapshot económico (distinto por modalidad)
   const snap = r.snapshot_economico;
@@ -789,9 +794,14 @@ async function cargarEventos() {
     cont.innerHTML = r.eventos.map(e => {
       const t = new Date(e.ts);
       const hora = t.toLocaleTimeString('es-PA', { hour: '2-digit', minute: '2-digit' });
+      // Mostrar la fecha corta (dd/mm) solo si el evento NO es de hoy, para no saturar.
+      const hoy = new Date();
+      const esHoy = t.toDateString() === hoy.toDateString();
+      const fecha = esHoy ? '' : t.toLocaleDateString('es-PA', { day: '2-digit', month: '2-digit' }) + ' ';
+      const sello = `${fecha}${hora}`;
       const destacado = e.tipo === 'alerta' ? 'text-red-300' : e.tipo === 'ciclo_fin' ? 'text-green-300/90' : 'text-slate-400';
       return `<div class="flex gap-2 ${destacado}">
-        <span class="text-slate-600 shrink-0">${hora}</span>
+        <span class="text-slate-300 font-mono tabular-nums shrink-0" title="${escHtml(t.toLocaleString('es-PA'))}">${sello}</span>
         <span class="wrap-safe">${icono[e.tipo] || '•'} ${escHtml(limpiarEmoji(e.mensaje))}</span>
       </div>`;
     }).join('');

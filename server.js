@@ -115,6 +115,7 @@ app.get('/api/bandeja', (req, res) => {
     ok: true, modo, timestamp: r.timestamp, ia: r.ia_habilitada,
     duracion_seg: r.duracion_seg,
     total: r.total_priorizadas,
+    fichas_generadas: r.fichas?.length || 0,
     distribucion_temas: r.distribucion_temas,
     snapshot_economico: r.snapshot_economico,
     grupos_con_duplicados: r.grupos_con_duplicados,

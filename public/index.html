@@ -56,6 +56,21 @@
     .kpi:hover { border-color: rgba(var(--accent-rgb),.4); transform: translateY(-1px); }
     /* Logo con glow dinámico */
     .logo-glow { box-shadow: 0 0 18px -2px rgba(var(--accent-rgb),.6); }
+    /* ── Logo V "wow": V que es un checkmark de verificación, con glow y anillo ── */
+    .vlogo{position:relative;background:linear-gradient(135deg,#06b6d4 0%,var(--accent) 55%,#a8324a 100%);overflow:visible}
+    .vlogo svg{width:66%;height:66%;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
+    .vlogo .vpath{stroke:#fff;stroke-width:3.6;stroke-linecap:round;stroke-linejoin:round;fill:none}
+    /* El trazo arranca visible; la animación de "dibujado" es un extra encima */
+    .vlogo .vpath{stroke-dasharray:48;stroke-dashoffset:0}
+    .vlogo.anim .vpath{stroke-dashoffset:48;animation:vdraw 1s cubic-bezier(.22,1,.36,1) .15s forwards}
+    @keyframes vdraw{to{stroke-dashoffset:0}}
+    .vlogo::after{content:'';position:absolute;inset:-3px;border-radius:14px;border:1.5px solid rgba(var(--accent-rgb),.55);
+      opacity:0;animation:vring 2.8s ease-out infinite}
+    @keyframes vring{0%{opacity:.7;transform:scale(1)}70%{opacity:0;transform:scale(1.25)}100%{opacity:0}}
+    .vlogo:hover{transform:scale(1.07) rotate(-3deg)}
+    .vlogo:hover .vgear{opacity:1} .vlogo:hover .vmark{opacity:0}
+    .vmark,.vgear{transition:opacity .25s}
+    @media (prefers-reduced-motion: reduce){.vlogo .vpath{animation:none;stroke-dashoffset:0}.vlogo::after{animation:none;opacity:0}}
     /* Botones de modo activo con brillo */
     .mode-active { box-shadow: 0 0 16px -3px rgba(var(--accent-rgb),.7); }
 
@@ -119,9 +134,13 @@
   <header class="sticky top-0 z-30 border-b border-white/10 bg-black/40 backdrop-blur-xl px-5 py-3">
     <div class="max-w-[1600px] mx-auto flex items-center justify-between gap-4 flex-wrap">
       <div class="flex items-center gap-3 min-w-0">
-        <button onclick="abrirConfig()" title="Configuración de VerifactIA" class="group relative w-11 h-11 accent-bg rounded-xl flex items-center justify-center font-black text-white text-xl logo-glow shrink-0 cursor-pointer hover:scale-105 transition" aria-label="Abrir configuración">
-          <span class="group-hover:opacity-0 transition-opacity">V</span>
-          <span class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-lg">⚙️</span>
+        <button onclick="abrirConfig()" title="VerifactIA · Configuración" class="vlogo anim relative w-11 h-11 rounded-xl flex items-center justify-center logo-glow shrink-0 cursor-pointer transition" aria-label="Abrir configuración">
+          <!-- V que también es un check de verificación -->
+          <svg class="vmark" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+            <path class="vpath" d="M7 9 L16 24 L25 9" />
+          </svg>
+          <!-- al hover: engranaje de configuración -->
+          <span class="vgear absolute inset-0 flex items-center justify-center opacity-0 text-lg">⚙️</span>
         </button>
         <div class="min-w-0">
           <h1 class="text-xl font-black tracking-tight leading-none">Verifact<span class="accent">IA</span></h1>
